@@ -20,25 +20,14 @@ user_schema = UserSchema()
 class UserRegister(Resource):
     @classmethod
     def post(cls):
-        try:
-            data = user_schema.load(request.get_json())
-        except ValidationError as error:
-            return error.messages, 400
-        if UserModel.find_by_username(data["username"]):
+        user = user_schema.load(request.get_json())
+        if UserModel.find_by_username(user.username):
             return {"message": "A user with that username already exists."}, 400
-
-        user = UserModel(**data)
         user.save_to_db()
-
         return {"message": "User created successfully."}, 201
 
 
 class User(Resource):
-    """
-    This resource can be useful when testing our Flask app. We may not want to expose it to public users, but for the
-    sake of demonstration in this course, it can be useful when we are manipulating data regarding the users.
-    """
-
     @classmethod
     def get(cls, user_id: int):
         user = UserModel.find_by_id(user_id)
@@ -58,15 +47,12 @@ class User(Resource):
 class UserLogin(Resource):
     @classmethod
     def post(cls):
-        try:
-            data = user_schema.load(request.json())
-        except ValidationError as error:
-            return error.messages, 400
+        data = user_schema.load(request.json)
 
-        user = UserModel.find_by_username(data["username"])
+        user = UserModel.find_by_username(data.username)
 
         # this is what the `authenticate()` function did in security.py
-        if user and safe_str_cmp(user.password, data["password"]):
+        if user and safe_str_cmp(user.password, data.password):
             # identity= is what the identity() function did in security.py—now stored in the JWT
             access_token = create_access_token(identity=user.id, fresh=True)
             refresh_token = create_refresh_token(user.id)
