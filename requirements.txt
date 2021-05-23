@@ -2,3 +2,6 @@ Flask
 Flask-JWT-Extended==3.25.1
 Flask-RESTful
 Flask-SQLAlchemy
+marshmallow==3.0.0b16
+flask-marshmallow
+marshmallow-sqlalchemy
