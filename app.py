@@ -34,7 +34,7 @@ jwt = JWTManager(app)
 def check_if_token_in_blacklist(decrypted_token):
     return (
             decrypted_token["jti"] in BLACKLIST
-    )  # Here we blacklist particular JWTs that have been created in the past.
+    )
 
 
 api.add_resource(Store, "/store/<string:name>")
