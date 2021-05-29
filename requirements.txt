@@ -5,3 +5,6 @@ Flask-SQLAlchemy
 marshmallow==3.0.0b16
 flask-marshmallow
 marshmallow-sqlalchemy
+werkzeug
+requests
+python-dotenv

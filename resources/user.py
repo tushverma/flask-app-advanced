@@ -10,9 +10,11 @@ from flask_jwt_extended import (
     get_raw_jwt,
 )
 from models.user import UserModel
+from models.confirmation import ConfirmationModel
 from blacklist import BLACKLIST
 from schemas.user import UserSchema
-from marshmallow import ValidationError
+import traceback
+from libs.mailgun import MailGunException
 
 user_schema = UserSchema()
 
@@ -23,8 +25,21 @@ class UserRegister(Resource):
         user = user_schema.load(request.get_json())
         if UserModel.find_by_username(user.username):
             return {"message": "A user with that username already exists."}, 400
-        user.save_to_db()
-        return {"message": "User created successfully."}, 201
+        if UserModel.find_by_email(user.username):
+            return {"message": "A user with that email already exists."}, 400
+        try:
+            user.save_to_db()
+            confirmation = ConfirmationModel(user.id)
+            confirmation.save_to_db()
+            user.send_confirmation_email()
+        except MailGunException as e:
+            user.delete_from_db()
+            return {"message": str(e)}, 500
+        except:
+            traceback.print_exc()
+            user.delete_from_db()
+            return {"message": "Failed to create user"}, 500
+        return {"message": "Account created successfully, please check email"}, 201
 
 
 class User(Resource):
@@ -47,16 +62,20 @@ class User(Resource):
 class UserLogin(Resource):
     @classmethod
     def post(cls):
-        data = user_schema.load(request.json)
+        data = user_schema.load(request.json, partial=('email',))
 
         user = UserModel.find_by_username(data.username)
 
         # this is what the `authenticate()` function did in security.py
         if user and safe_str_cmp(user.password, data.password):
+            confirmation = user.most_recent_confirmation
             # identity= is what the identity() function did in security.py—now stored in the JWT
-            access_token = create_access_token(identity=user.id, fresh=True)
-            refresh_token = create_refresh_token(user.id)
-            return {"access_token": access_token, "refresh_token": refresh_token}, 200
+            if confirmation and confirmation.confirmed:
+                access_token = create_access_token(identity=user.id, fresh=True)
+                refresh_token = create_refresh_token(user.id)
+                return {"access_token": access_token, "refresh_token": refresh_token}, 200
+            else:
+                return {"message": "You have not confirmed your email."}, 400
 
         return {"message": "Invalid credentials!"}, 401
 
