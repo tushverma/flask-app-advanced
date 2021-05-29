@@ -9,3 +9,4 @@ werkzeug
 requests
 python-dotenv
 Flask-Babel
+flask-uploads
