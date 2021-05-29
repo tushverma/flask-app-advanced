@@ -8,3 +8,4 @@ marshmallow-sqlalchemy
 werkzeug
 requests
 python-dotenv
+Flask-Babel
