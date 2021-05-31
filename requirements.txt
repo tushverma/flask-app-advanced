@@ -2,9 +2,14 @@ Flask
 Flask-JWT-Extended==3.25.1
 Flask-RESTful
 Flask-SQLAlchemy
-marshmallow==3.0.0b16
+marshmallow==3.0.0b19
 flask-marshmallow
 marshmallow-sqlalchemy
-werkzeug
+Werkzeug==0.16.0
 requests
 python-dotenv
+Flask-Babel
+flask-uploads
+psycopg2
+flask-migrate
+Flask-OAuthlib

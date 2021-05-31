@@ -1,28 +1,34 @@
+from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
+from flask_uploads import configure_uploads, patch_request_class
 
+load_dotenv(".env", verbose=True)
 from db import db
+from oa import oauth
+from flask_migrate import Migrate
 from blacklist import BLACKLIST
-from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout
+from resources.user import UserRegister, UserLogin, User, TokenRefresh, UserLogout, SetPassword
 from resources.item import Item, ItemList
 from resources.store import Store, StoreList
 from resources.confirmation import Confirmation, ConfirmationByUser
+from resources.image import ImageUpload, Image, AvatarUpload, Avatar
+from libs.image_helper import IMAGE_SET
+from resources.github_login import GithubLogin, GithubAuthorize
 from ma import ma
 from marshmallow import ValidationError
 import os
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DATABASE_URI')
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["PROPAGATE_EXCEPTIONS"] = True
-app.config["JWT_BLACKLIST_ENABLED"] = True  # enable blacklist feature
-app.config["JWT_BLACKLIST_TOKEN_CHECKS"] = [
-    "access",
-    "refresh",
-]  # allow blacklisting for access and refresh tokens
-app.secret_key = os.environ.get('APP_SECRET_KEY')  # could do app.config['JWT_SECRET_KEY'] if we prefer
+
+app.config.from_object("default_config")
+app.config.from_envvar("APPLICATION_SETTINGS")
+patch_request_class(app, 64 * 1024 * 1024)  # 10 MB max size upload
+configure_uploads(app, IMAGE_SET)
 api = Api(app)
+db.init_app(app)
+ma.init_app(app)
 
 
 @app.before_first_request
@@ -31,6 +37,7 @@ def create_tables():
 
 
 jwt = JWTManager(app)
+migrate = Migrate(app, db)
 
 
 # This method will check if a token is blacklisted, and will be called automatically when blacklist is enabled
@@ -55,10 +62,16 @@ api.add_resource(User, "/user/<int:user_id>")
 api.add_resource(UserLogin, "/login")
 api.add_resource(TokenRefresh, "/refresh")
 api.add_resource(UserLogout, "/logout")
-api.add_resource(Confirmation, "/user_confirmation/<int:confirmation_id>")
+api.add_resource(Confirmation, "/user_confirmation/<string:confirmation_id>")
 api.add_resource(ConfirmationByUser, "/confirmation/user/<int:user_id>")
+api.add_resource(ImageUpload, "/upload/image")
+api.add_resource(Image, "/image/<string:filename>")
+api.add_resource(AvatarUpload, "/upload/avatar")
+api.add_resource(Avatar, "/avatar/<int:user_id>")
+api.add_resource(GithubLogin, "/login/github")
+api.add_resource(GithubAuthorize, '/login/github/authorized', endpoint='github.authorize')
+api.add_resource(SetPassword, "/user/password")
 
 if __name__ == "__main__":
-    db.init_app(app)
-    ma.init_app(app)
-    app.run(port=5000, debug=True)
+    oauth.init_app(app)
+    app.run(port=5000)

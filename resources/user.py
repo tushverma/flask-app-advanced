@@ -8,6 +8,7 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required,
     get_raw_jwt,
+    fresh_jwt_required,
 )
 from models.user import UserModel
 from models.confirmation import ConfirmationModel
@@ -25,7 +26,7 @@ class UserRegister(Resource):
         user = user_schema.load(request.get_json())
         if UserModel.find_by_username(user.username):
             return {"message": "A user with that username already exists."}, 400
-        if UserModel.find_by_email(user.username):
+        if UserModel.find_by_email(user.email):
             return {"message": "A user with that email already exists."}, 400
         try:
             user.save_to_db()
@@ -97,3 +98,17 @@ class TokenRefresh(Resource):
         current_user = get_jwt_identity()
         new_token = create_access_token(identity=current_user, fresh=False)
         return {"access_token": new_token}, 200
+
+
+class SetPassword(Resource):
+    @classmethod
+    @fresh_jwt_required
+    def post(cls):
+        user_json = request.json
+        user_data = user_schema.load(user_json)
+        user = UserModel.find_by_username(user_data.username)
+        if not user:
+            return {"message": "User not found"}, 400
+        user.password = user_data.password
+        user.save_to_db()
+        return {"message": "user created successfully"}, 200

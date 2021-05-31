@@ -10,8 +10,8 @@ class UserModel(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(80), nullable=False, unique=True)
+    password = db.Column(db.String(80), nullable=True)
+    email = db.Column(db.String(80), nullable=True, unique=True)
     confirmation = db.relationship("ConfirmationModel", lazy='dynamic', cascade='all, delete-orphan')
 
     @property
@@ -32,7 +32,7 @@ class UserModel(db.Model):
 
     def send_confirmation_email(self) -> Response:
         # http://127.0.0.1:5000/iser_confrim/1
-        link = request.url_root[:-1] + url_for("confirmation", confirmation_id=self.most_recent_confirmation.id)
+        link = 'test'## request.url_root[:-1] + url_for("confirmation", confirmation_id=self.most_recent_confirmation.id)
         return MailGun.send_confirmation_email(email=[self.email],
                                                subject="Account Activation",
                                                text=f"Please click the link to confirm your registration : {link}",
