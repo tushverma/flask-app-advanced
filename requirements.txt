@@ -5,8 +5,10 @@ Flask-SQLAlchemy
 marshmallow==3.0.0b16
 flask-marshmallow
 marshmallow-sqlalchemy
-werkzeug
+Werkzeug==0.16.0
 requests
 python-dotenv
 Flask-Babel
 flask-uploads
+psycopg2
+flask-migrate

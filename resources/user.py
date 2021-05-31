@@ -25,7 +25,7 @@ class UserRegister(Resource):
         user = user_schema.load(request.get_json())
         if UserModel.find_by_username(user.username):
             return {"message": "A user with that username already exists."}, 400
-        if UserModel.find_by_email(user.username):
+        if UserModel.find_by_email(user.email):
             return {"message": "A user with that email already exists."}, 400
         try:
             user.save_to_db()
